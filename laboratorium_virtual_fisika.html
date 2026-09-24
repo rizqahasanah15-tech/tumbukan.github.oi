@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lab Virtual: Momentum & Impuls</title>
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);
+            min-height: 100vh;
+            color: #1f2937;
+        }
+
+        /* Glassmorphism Classes */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(200, 200, 200, 0.3);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        /* Range Slider Styling */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: #ffffff;
+            border: 2px solid #3b82f6;
+            cursor: pointer;
+            margin-top: -8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            background: #e2e8f0;
+            border-radius: 5px;
+        }
+        input[type=range]:focus { outline: none; }
+
+        /* Animations */
+        @keyframes flash {
+            0% { opacity: 0; transform: scale(0.5); }
+            50% { opacity: 1; transform: scale(1.5); }
+            100% { opacity: 0; transform: scale(2); }
+        }
+        .collision-flash {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            background: radial-gradient(circle, rgba(255,255,255,1) 0%, rgba(255,255,0,0.5) 50%, rgba(255,255,255,0) 100%);
+            border-radius: 50%;
+            pointer-events: none;
+            animation: flash 0.3s ease-out forwards;
+            display: none;
+        }
+
+        @keyframes thrust {
+            0% { transform: scaleY(0.8) translateY(0); opacity: 0.8; }
+            50% { transform: scaleY(1.2) translateY(5px); opacity: 1; }
+            100% { transform: scaleY(0.8) translateY(0); opacity: 0.8; }
+        }
+        .rocket-fire {
+            transform-origin: top;
+            animation: thrust 0.1s infinite alternate;
+            display: none;
+        }
+
+        /* Tab Active State */
+        .tab-btn { transition: all 0.3s ease; }
+        .tab-btn.active {
+            background: #3b82f6;
+            color: white;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <div class="max-w-6xl mx-auto">
+        
+        <!-- Header -->
+        <header class="text-center mb-8">
+            <div class="inline-block bg-gradient-to-r from-blue-600 to-indigo-600 text-transparent bg-clip-text">
+                <h1 class="text-4xl md:text-5xl font-bold mb-2"><i class="fas fa-atom text-blue-600 mr-3"></i>Fisika Interaktif</h1>
+            </div>
+            <p class="text-gray-500 font-medium">Laboratorium Virtual: Momentum, Impuls & Restitusi</p>
+        </header>
+
+        <!-- Navigation -->
+        <nav class="flex flex-wrap justify-center gap-3 mb-8">
+            <button onclick="openMainTab('tab-momentum')" id="btn-main-momentum" class="tab-btn active px-6 py-3 rounded-full font-semibold text-gray-600 bg-white/60 hover:bg-white shadow-sm border border-gray-200 backdrop-blur-sm">
+                <i class="fas fa-desktop mr-2"></i> Ruang Simulasi
+            </button>
+            <button onclick="openMainTab('tab-lkpd')" id="btn-main-lkpd" class="tab-btn px-6 py-3 rounded-full font-semibold text-gray-600 bg-white/60 hover:bg-white shadow-sm border border-gray-200 backdrop-blur-sm">
+                <i class="fas fa-book-open mr-2"></i> LKPD Terpadu
+            </button>
+        </nav>
+
+        <!-- Main Content Area -->
+        <div class="glass-panel rounded-3xl p-4 md:p-8 min-h-[600px] relative overflow-hidden shadow-xl border border-white/40">
+            
+            <!-- TAB 1: SIMULASI -->
+            <div id="tab-momentum" class="block animate-fade-in">
+                
+                <!-- Scenario Selector -->
+                <div class="mb-8 bg-white/80 p-2 rounded-2xl shadow-sm border border-gray-100 flex flex-col md:flex-row gap-2">
+                    <button onclick="setScenario('sempurna')" id="btn-scen-sempurna" class="scen-btn flex-1 py-3 px-4 rounded-xl font-bold transition-all bg-blue-600 text-white shadow-md">
+                        <i class="fas fa-circle-notch mr-2"></i>Lenting Sempurna
+                    </button>
+                    <button onclick="setScenario('sebagian')" id="btn-scen-sebagian" class="scen-btn flex-1 py-3 px-4 rounded-xl font-bold transition-all text-gray-600 hover:bg-gray-100">
+                        <i class="fas fa-arrow-down mr-2"></i>Lenting Sebagian (Vertikal)
+                    </button>
+                    <button onclick="setScenario('tidak')" id="btn-scen-tidak" class="scen-btn flex-1 py-3 px-4 rounded-xl font-bold transition-all text-gray-600 hover:bg-gray-100">
+                        <i class="fas fa-link mr-2"></i>Tidak Lenting
+                    </button>
+                </div>
+
+                <!-- DYNAMIC WRAPPER -->
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                    
+                    <!-- Controls Area -->
+                    <div class="col-span-1 lg:col-span-4 space-y-6" id="controls-area">
+                        <!-- Disuntik via JavaScript berdasarkan Skenario -->
+                    </div>
+
+                    <!-- Canvas & Table Area -->
+                    <div class="col-span-1 lg:col-span-8 flex flex-col gap-6">
+                        
+                        <!-- Canvas -->
+                        <div id="canvas-area" class="relative w-full bg-slate-900 rounded-2xl overflow-hidden shadow-inner border-4 border-slate-800" style="height: 320px;">
+                            <!-- Disuntik via JavaScript berdasarkan Skenario -->
+                        </div>
+
+                        <!-- Data Table -->
+                        <div class="glass-card rounded-xl p-5 overflow-x-auto border border-gray-200" id="table-area">
+                            <!-- Disuntik via JavaScript berdasarkan Skenario -->
+                        </div>
+
+                        <!-- Explanation Box -->
+                        <div id="explanation-box" class="hidden p-5 bg-blue-50/90 border-l-4 border-blue-500 rounded-r-lg shadow-sm transition-all duration-300 backdrop-blur-sm">
+                            <h4 class="font-bold text-blue-800 flex items-center mb-2"><i class="fas fa-lightbulb mr-2 text-yellow-500"></i> Kesimpulan Otomatis:</h4>
+                            <div id="explanation-text" class="text-sm text-blue-900 leading-relaxed"></div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 2: LKPD -->
+            <div id="tab-lkpd" class="hidden animate-fade-in flex-col h-full bg-white rounded-2xl p-6 md:p-10 shadow-inner overflow-y-auto border border-gray-100">
+                
+                <div class="max-w-4xl mx-auto w-full text-gray-800">
+                    <!-- Header LKPD -->
+                    <div class="text-center mb-10 pb-6 border-b-2 border-indigo-500">
+                        <h2 class="text-3xl md:text-4xl font-black text-indigo-900 mb-3 tracking-tight">LEMBAR KERJA PESERTA DIDIK</h2>
+                        <h3 class="text-xl md:text-2xl font-semibold text-gray-600">Momentum & Koefisien Restitusi (e)</h3>
+                    </div>
+
+                    <!-- Identitas -->
+                    <div class="bg-indigo-50/50 p-6 md:p-8 rounded-2xl border border-indigo-100 mb-10 shadow-sm">
+                        <h4 class="text-lg font-bold text-indigo-900 mb-5 flex items-center border-b border-indigo-200 pb-3 uppercase tracking-wider">
+                            <i class="fas fa-users mr-3 text-indigo-600"></i> Kelompok / Siswa
+                        </h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <input type="text" class="w-full border-b-2 border-gray-300 p-3 focus:border-indigo-600 bg-transparent text-lg outline-none transition-colors" placeholder="Nama Lengkap / Kelompok...">
+                            <input type="text" class="w-full border-b-2 border-gray-300 p-3 focus:border-indigo-600 bg-transparent text-lg outline-none transition-colors" placeholder="Kelas / Absen...">
+                        </div>
+                    </div>
+
+                    <div class="space-y-12 text-lg">
+                        
+                        <!-- Kegiatan 1: Lenting Sempurna -->
+                        <section class="border border-blue-200 rounded-2xl p-6 md:p-8 bg-white relative overflow-hidden">
+                            <div class="absolute top-0 left-0 w-2 h-full bg-blue-500"></div>
+                            <h4 class="text-2xl font-bold text-blue-800 mb-4 flex items-center">
+                                Eksperimen 1: Lenting Sempurna (Biliar)
+                            </h4>
+                            <p class="text-gray-600 mb-4">Pilih tab <strong>Lenting Sempurna</strong>. Atur massa dan kecepatan 2 bola agar bertabrakan.</p>
+                            <div class="bg-blue-50 p-4 rounded-xl mb-4 text-sm text-blue-900 border border-blue-100">
+                                <strong>Tugas:</strong> Apakah nilai Total Momentum (Σp) sebelum dan sesudah tabrakan tetap sama? Bagaimana dengan energi kinetiknya jika tidak ada bunyi/panas yang dihasilkan?
+                            </div>
+                            <textarea rows="4" class="w-full border-2 border-gray-200 rounded-xl p-4 focus:border-blue-500 bg-gray-50 text-gray-800 outline-none" placeholder="Tuliskan analisis Anda di sini..."></textarea>
+                        </section>
+
+                        <!-- Kegiatan 2: Lenting Sebagian (Vertikal) -->
+                        <section class="border border-emerald-200 rounded-2xl p-6 md:p-8 bg-white relative overflow-hidden">
+                            <div class="absolute top-0 left-0 w-2 h-full bg-emerald-500"></div>
+                            <h4 class="text-2xl font-bold text-emerald-800 mb-4 flex items-center">
+                                Eksperimen 2: Lenting Sebagian (Bola Basket)
+                            </h4>
+                            <p class="text-gray-600 mb-4">Pilih tab <strong>Lenting Sebagian (Vertikal)</strong>. Jatuhkan bola dengan Koefisien Restitusi (e) = 0.5.</p>
+                            <div class="bg-emerald-50 p-4 rounded-xl mb-4 text-sm text-emerald-900 border border-emerald-100">
+                                <strong>Tugas:</strong> Jika ketinggian awal (h₁) adalah 10 meter, berapa ketinggian pantulan (h₂)? Mengapa bola tidak kembali ke ketinggian 10 meter? Kemana hilangnya energi tersebut?
+                            </div>
+                            <textarea rows="4" class="w-full border-2 border-gray-200 rounded-xl p-4 focus:border-emerald-500 bg-gray-50 text-gray-800 outline-none" placeholder="Tuliskan hasil pengamatan Anda..."></textarea>
+                        </section>
+
+                        <!-- Kegiatan 3: Tidak Lenting -->
+                        <section class="border border-rose-200 rounded-2xl p-6 md:p-8 bg-white relative overflow-hidden">
+                            <div class="absolute top-0 left-0 w-2 h-full bg-rose-500"></div>
+                            <h4 class="text-2xl font-bold text-rose-800 mb-4 flex items-center">
+                                Eksperimen 3: Tidak Lenting (Kereta Menyatu)
+                            </h4>
+                            <p class="text-gray-600 mb-4">Pilih tab <strong>Tidak Lenting</strong>. Tabrakkan dua benda hingga menyatu.</p>
+                            <div class="bg-rose-50 p-4 rounded-xl mb-4 text-sm text-rose-900 border border-rose-100">
+                                <strong>Tugas:</strong> Perhatikan kecepatan akhir (v') kedua benda. Mengapa kecepatannya menjadi sama persis? Apakah Hukum Kekekalan Momentum (Σp = Σp') tetap berlaku walau mereka menyatu?
+                            </div>
+                            <textarea rows="4" class="w-full border-2 border-gray-200 rounded-xl p-4 focus:border-rose-500 bg-gray-50 text-gray-800 outline-none" placeholder="Berikan alasan fisika Anda..."></textarea>
+                        </section>
+
+                        <!-- Kesimpulan -->
+                        <div class="bg-gradient-to-br from-indigo-900 to-slate-900 p-8 rounded-2xl shadow-xl mt-12 text-white">
+                            <h4 class="font-black text-2xl flex items-center mb-4 text-yellow-400">
+                                <i class="fas fa-award mr-3"></i> Kesimpulan Utama
+                            </h4>
+                            <p class="text-indigo-200 mb-6 text-base">Rangkum apa perbedaan mendasar dari ketiga jenis tumbukan tersebut berdasarkan pergerakan benda setelah tumbukan dan kekekalan momentumnya!</p>
+                            <textarea rows="5" class="w-full border border-indigo-400/30 rounded-xl p-5 focus:border-white bg-indigo-950/50 text-white text-lg outline-none placeholder-indigo-300" placeholder="Kesimpulan eksperimen..."></textarea>
+                        </div>
+                        
+                        <div class="text-right pt-8">
+                             <button onclick="window.print()" class="bg-indigo-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-indigo-700 transition-all shadow-lg hover:shadow-indigo-500/50">
+                                <i class="fas fa-print mr-2"></i> Cetak Lembar Kerja
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Tab Navigation ---
+        function openMainTab(tabId) {
+            ['tab-momentum', 'tab-lkpd'].forEach(id => {
+                document.getElementById(id).classList.add('hidden');
+                document.getElementById(id).classList.remove('flex', 'block');
+            });
+            ['btn-main-momentum', 'btn-main-lkpd'].forEach(id => {
+                document.getElementById(id).classList.remove('active', 'bg-blue-600', 'text-white');
+            });
+
+            const target = document.getElementById(tabId);
+            target.classList.remove('hidden');
+            target.classList.add(tabId === 'tab-lkpd' ? 'flex' : 'block');
+            
+            const btn = document.getElementById(tabId.replace('tab-', 'btn-main-'));
+            btn.classList.add('active', 'bg-blue-600', 'text-white');
+        }
+
+        // --- Core Variables ---
+        let currentScenario = 'sempurna'; // 'sempurna', 'sebagian', 'tidak'
+        let animFrame;
+        let isPlaying = false;
+        
+        // Physics Data
+        let state = {
+            m1: 2, v1: 4, m2: 1.5, v2: -3, // For horizontal (Sempurna & Tidak)
+            h: 8, e: 0.7, // For vertical (Sebagian)
+            pos1: 20, pos2: 70, // Horizontal X position %
+            posY: 0, velY: 0, bounceCount: 0 // Vertical Y position
+        };
+
+        // --- DOM Elements Generators ---
+        const ctrArea = document.getElementById('controls-area');
+        const cvsArea = document.getElementById('canvas-area');
+        const tblArea = document.getElementById('table-area');
+        const expBox = document.getElementById('explanation-box');
+        const expText = document.getElementById('explanation-text');
+
+        const templates = {
+            controlsHorizontal: `
+                <!-- Benda A -->
+                <div class="bg-blue-50/50 p-4 rounded-xl border border-blue-200">
+                    <h3 class="font-bold text-blue-800 mb-3 flex justify-between"><span><i class="fas fa-circle text-blue-500 mr-2"></i>Benda A</span></h3>
+                    <div class="mb-3"><div class="flex justify-between text-sm mb-1"><span>Massa (m)</span><span class="font-bold text-blue-600"><span id="val-m1">2.0</span> kg</span></div><input type="range" id="inp-m1" min="1" max="5" step="0.5" value="2"></div>
+                    <div><div class="flex justify-between text-sm mb-1"><span>Kecepatan (v)</span><span class="font-bold text-blue-600"><span id="val-v1">4.0</span> m/s</span></div><input type="range" id="inp-v1" min="-10" max="10" step="1" value="4"></div>
+                </div>
+                <!-- Benda B -->
+                <div class="bg-rose-50/50 p-4 rounded-xl border border-rose-200 mt-4">
+                    <h3 class="font-bold text-rose-800 mb-3 flex justify-between"><span><i class="fas fa-square text-rose-500 mr-2"></i>Benda B</span></h3>
+                    <div class="mb-3"><div class="flex justify-between text-sm mb-1"><span>Massa (m)</span><span class="font-bold text-rose-600"><span id="val-m2">1.5</span> kg</span></div><input type="range" id="inp-m2" min="1" max="5" step="0.5" value="1.5"></div>
+                    <div><div class="flex justify-between text-sm mb-1"><span>Kecepatan (v)</span><span class="font-bold text-rose-600"><span id="val-v2">-3.0</span> m/s</span></div><input type="range" id="inp-v2" min="-10" max="10" step="1" value="-3"></div>
+                </div>
+                <div class="flex gap-2 mt-6">
+                    <button id="btn-play" class="flex-1 bg-green-500 text-white py-3 rounded-xl font-bold shadow-md hover:bg-green-600"><i class="fas fa-play mr-1"></i> Mulai</button>
+                    <button id="btn-reset" class="flex-1 bg-slate-500 text-white py-3 rounded-xl font-bold shadow-md hover:bg-slate-600"><i class="fas fa-redo mr-1"></i> Reset</button>
+                </div>
+            `,
+            controlsVertical: `
+                <div class="bg-emerald-50/50 p-5 rounded-xl border border-emerald-200">
+                    <h3 class="font-bold text-emerald-800 mb-4 flex justify-between"><span><i class="fas fa-basketball-ball text-orange-500 mr-2"></i>Bola Jatuh Bebas</span></h3>
+                    
+                    <div class="mb-5"><div class="flex justify-between text-sm mb-2"><span>Ketinggian Awal (h)</span><span class="font-bold text-emerald-600"><span id="val-h">8.0</span> meter</span></div>
+                    <input type="range" id="inp-h" min="2" max="10" step="1" value="8"></div>
+                    
+                    <div class="mb-5"><div class="flex justify-between text-sm mb-2"><span>Koefisien Restitusi (e)</span><span class="font-bold text-emerald-600"><span id="val-e">0.7</span></span></div>
+                    <input type="range" id="inp-e" min="0.1" max="0.9" step="0.1" value="0.7">
+                    <p class="text-xs text-gray-500 mt-1">e < 1 menandakan lenting sebagian (kehilangan energi).</p></div>
+                </div>
+                <div class="flex gap-2 mt-6">
+                    <button id="btn-play" class="flex-1 bg-green-500 text-white py-3 rounded-xl font-bold shadow-md hover:bg-green-600"><i class="fas fa-play mr-1"></i> Jatuhkan</button>
+                    <button id="btn-reset" class="flex-1 bg-slate-500 text-white py-3 rounded-xl font-bold shadow-md hover:bg-slate-600"><i class="fas fa-redo mr-1"></i> Reset</button>
+                </div>
+            `,
+            canvasHorizontal: `
+                <!-- Background Grid -->
+                <div class="absolute inset-0 opacity-20" style="background-image: radial-gradient(circle, white 1px, transparent 1px); background-size: 20px 20px;"></div>
+                <!-- Track -->
+                <div class="absolute w-full h-2 bg-slate-600 top-1/2 -translate-y-1/2 shadow-lg"></div>
+                
+                <!-- Objects -->
+                <div id="obj1" class="absolute top-1/2 -translate-y-1/2 transition-transform" style="left: 20%;">
+                    <div id="vec1" class="absolute bottom-full mb-1 h-1 bg-blue-400 origin-left flex items-center z-10"><div class="arrow-head absolute -right-2 w-0 h-0 border-y-[4px] border-y-transparent border-l-[8px] border-l-blue-400"></div></div>
+                    <div id="shape1" class="bg-gradient-to-br from-blue-400 to-blue-700 shadow-[0_0_15px_rgba(59,130,246,0.5)] border-2 border-white flex items-center justify-center text-white font-bold z-20 relative">A</div>
+                </div>
+
+                <div id="obj2" class="absolute top-1/2 -translate-y-1/2 transition-transform" style="left: 70%;">
+                    <div id="vec2" class="absolute bottom-full mb-1 h-1 bg-rose-400 origin-left flex items-center z-10"><div class="arrow-head absolute -right-2 w-0 h-0 border-y-[4px] border-y-transparent border-l-[8px] border-l-rose-400"></div></div>
+                    <div id="shape2" class="bg-gradient-to-br from-rose-400 to-rose-700 shadow-[0_0_15px_rgba(244,63,94,0.5)] border-2 border-white flex items-center justify-center text-white font-bold z-20 relative">B</div>
+                </div>
+                <div id="flash" class="absolute hidden w-20 h-20 bg-yellow-300 rounded-full blur-xl opacity-50 top-1/2 -translate-y-1/2 -translate-x-1/2"></div>
+            `,
+            canvasVertical: `
+                <!-- Background -->
+                <div class="absolute inset-0 bg-gradient-to-b from-sky-900 to-slate-800"></div>
+                <!-- Floor -->
+                <div class="absolute w-full h-8 bg-gradient-to-r from-slate-600 to-slate-700 bottom-0 border-t-4 border-slate-500 shadow-[0_-5px_15px_rgba(0,0,0,0.5)]"></div>
+                <!-- Measurement Line -->
+                <div class="absolute left-10 top-10 bottom-8 border-l-2 border-dashed border-white/30 flex flex-col justify-between py-2 text-white/50 text-xs font-mono">
+                    <span id="mark-top">10m -</span>
+                    <span>5m -</span>
+                    <span>0m -</span>
+                </div>
+                
+                <!-- Dropping Ball -->
+                <div id="objY" class="absolute left-1/2 -translate-x-1/2 bottom-8" style="transform: translateY(-200px);">
+                    <div class="w-12 h-12 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 shadow-lg border-2 border-orange-200 flex items-center justify-center relative z-20">
+                        <div class="absolute w-full h-[1px] bg-black/20 rotate-45"></div>
+                        <div class="absolute w-full h-[1px] bg-black/20 -rotate-45"></div>
+                    </div>
+                </div>
+            `,
+            tableHorizontal: `
+                <table class="w-full text-sm text-left">
+                    <thead class="text-xs uppercase bg-gray-100">
+                        <tr><th class="px-4 py-3">Fase</th><th class="px-4 py-3 text-blue-700">Benda A (v, p)</th><th class="px-4 py-3 text-rose-700">Benda B (v, p)</th><th class="px-4 py-3 text-purple-700">Total (Σp)</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr class="border-b bg-white"><td class="px-4 py-3 font-semibold">Sebelum</td>
+                            <td class="px-4 py-3" id="td-awal-a">-</td><td class="px-4 py-3" id="td-awal-b">-</td><td class="px-4 py-3 font-bold text-purple-600" id="td-awal-tot">-</td></tr>
+                        <tr class="bg-gray-50"><td class="px-4 py-3 font-semibold">Sesudah</td>
+                            <td class="px-4 py-3" id="td-akhir-a">-</td><td class="px-4 py-3" id="td-akhir-b">-</td><td class="px-4 py-3 font-bold text-purple-600" id="td-akhir-tot">-</td></tr>
+                    </tbody>
+                </table>
+            `,
+            tableVertical: `
+                <table class="w-full text-sm text-left">
+                    <thead class="text-xs uppercase bg-gray-100">
+                        <tr><th class="px-4 py-3">Fase Pantulan</th><th class="px-4 py-3">Ketinggian (h)</th><th class="px-4 py-3">Kecepatan Sesaat (v)</th></tr>
+                    </thead>
+                    <tbody id="vertical-tbody">
+                        <tr class="border-b bg-white"><td class="px-4 py-3 font-semibold">Awal (Jatuh)</td><td class="px-4 py-3" id="td-v-h1">-</td><td class="px-4 py-3 text-rose-600" id="td-v-v1">-</td></tr>
+                        <tr class="bg-gray-50"><td class="px-4 py-3 font-semibold">Pantulan ke-1</td><td class="px-4 py-3 text-blue-600" id="td-v-h2">-</td><td class="px-4 py-3 text-emerald-600" id="td-v-v2">-</td></tr>
+                    </tbody>
+                </table>
+            `
+        };
+
+        function setScenario(type) {
+            if(isPlaying) return;
+            currentScenario = type;
+            
+            // UI Button styling
+            document.querySelectorAll('.scen-btn').forEach(btn => {
+                btn.className = "scen-btn flex-1 py-3 px-4 rounded-xl font-bold transition-all text-gray-600 hover:bg-gray-100";
+            });
+            const activeBtn = document.getElementById(`btn-scen-${type}`);
+            
+            // Reset Layouts based on type
+            if(type === 'sempurna') {
+                activeBtn.className = "scen-btn flex-1 py-3 px-4 rounded-xl font-bold transition-all bg-blue-600 text-white shadow-md";
+                ctrArea.innerHTML = templates.controlsHorizontal;
+                cvsArea.innerHTML = templates.canvasHorizontal;
+                tblArea.innerHTML = templates.tableHorizontal;
+                
+                // Shape styling: Sempurna = Bola bulat
+                document.getElementById('shape1').className += " rounded-full w-[50px] h-[50px]";
+                document.getElementById('shape2').className += " rounded-full w-[50px] h-[50px]";
+                bindHorizontalEvents();
+                
+            } else if (type === 'tidak') {
+                activeBtn.className = "scen-btn flex-1 py-3 px-4 rounded-xl font-bold transition-all bg-rose-600 text-white shadow-md";
+                ctrArea.innerHTML = templates.controlsHorizontal;
+                cvsArea.innerHTML = templates.canvasHorizontal;
+                tblArea.innerHTML = templates.tableHorizontal;
+                
+                // Shape styling: Tidak Lenting = Balok/Kotak
+                document.getElementById('shape1').className += " rounded-lg w-[60px] h-[50px]";
+                document.getElementById('shape2').className += " rounded-lg w-[60px] h-[50px]";
+                bindHorizontalEvents();
+
+            } else if (type === 'sebagian') {
+                activeBtn.className = "scen-btn flex-1 py-3 px-4 rounded-xl font-bold transition-all bg-emerald-600 text-white shadow-md";
+                ctrArea.innerHTML = templates.controlsVertical;
+                cvsArea.innerHTML = templates.canvasVertical;
+                tblArea.innerHTML = templates.tableVertical;
+                bindVerticalEvents();
+            }
+
+            expBox.classList.add('hidden');
+            updateUI();
+        }
+
+        function bindHorizontalEvents() {
+            ['m1', 'v1', 'm2', 'v2'].forEach(id => {
+                document.getElementById(`inp-${id}`).addEventListener('input', (e) => {
+                    state[id] = parseFloat(e.target.value);
+                    updateUI();
+                });
+            });
+            document.getElementById('btn-play').addEventListener('click', playHorizontal);
+            document.getElementById('btn-reset').addEventListener('click', () => { resetSim(); updateUI(); });
+        }
+
+        function playHorizontal() {
+            if(isPlaying) return;
+            
+            // Validasi tabrakan
+            if(state.v1 <= state.v2 && state.pos1 < state.pos2) {
+                const btn = document.getElementById('btn-play');
+                btn.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Tidak Bertumbukan';
+                btn.classList.replace('bg-green-500', 'bg-orange-500');
+                setTimeout(() => { btn.innerHTML = '<i class="fas fa-play mr-1"></i> Mulai'; btn.classList.replace('bg-orange-500', 'bg-green-500'); }, 2000);
+                return;
+            }
+
+            isPlaying = true;
+            document.getElementById('btn-play').classList.add('opacity-50', 'cursor-not-allowed');
+
+            let cv1 = state.v1;
+            let cv2 = state.v2;
+            let hasCollided = false;
+            
+            // Pre-calculate finals
+            let v1f, v2f;
+            if(currentScenario === 'sempurna') {
+                v1f = ((state.m1 - state.m2)*state.v1 + 2*state.m2*state.v2) / (state.m1 + state.m2);
+                v2f = ((state.m2 - state.m1)*state.v2 + 2*state.m1*state.v1) / (state.m1 + state.m2);
+            } else { // tidak lenting (e=0)
+                v1f = v2f = (state.m1*state.v1 + state.m2*state.v2) / (state.m1 + state.m2);
+            }
+
+            function animate() {
+                const speed = 0.2;
+                state.pos1 += cv1 * speed;
+                state.pos2 += cv2 * speed;
+                
+                const o1 = document.getElementById('obj1');
+                const o2 = document.getElementById('obj2');
+                o1.style.left = `${state.pos1}%`;
+                o2.style.left = `${state.pos2}%`;
+
+                // Width percentage approx
+                const wPct = (document.getElementById('shape1').offsetWidth / o1.parentElement.clientWidth) * 100;
+
+                // Collision Detection
+                if(!hasCollided && (state.pos1 + wPct*0.9 >= state.pos2)) {
+                    hasCollided = true;
+                    cv1 = v1f;
+                    cv2 = v2f;
+
+                    // Visual Effects
+                    if(currentScenario === 'sempurna') {
+                        const flash = document.getElementById('flash');
+                        flash.style.display = 'block'; flash.style.left = `${state.pos1 + wPct/2}%`;
+                        setTimeout(() => flash.style.display='none', 150);
+                    } else {
+                        // Tidak lenting: visually connect them
+                        state.pos2 = state.pos1 + wPct; 
+                    }
+
+                    // Update Table
+                    const p1f = state.m1 * v1f;
+                    const p2f = state.m2 * v2f;
+                    document.getElementById('td-akhir-a').innerHTML = `v' = ${v1f.toFixed(2)} m/s<br><span class="text-xs text-blue-600">p' = ${p1f.toFixed(2)} kg.m/s</span>`;
+                    document.getElementById('td-akhir-b').innerHTML = `v' = ${v2f.toFixed(2)} m/s<br><span class="text-xs text-rose-600">p' = ${p2f.toFixed(2)} kg.m/s</span>`;
+                    document.getElementById('td-akhir-tot').innerText = `${(p1f+p2f).toFixed(2)} kg.m/s`;
+
+                    drawVector(document.getElementById('vec1'), v1f, 'blue');
+                    drawVector(document.getElementById('vec2'), v2f, 'rose');
+                    
+                    showExplanation(currentScenario);
+                }
+
+                if(state.pos1 < -20 || state.pos1 > 120 || state.pos2 < -20 || state.pos2 > 120) {
+                    cancelAnimationFrame(animFrame);
+                    isPlaying = false;
+                    document.getElementById('btn-play').classList.remove('opacity-50', 'cursor-not-allowed');
+                    return;
+                }
+                animFrame = requestAnimationFrame(animate);
+            }
+            animate();
+        }
+
+        function bindVerticalEvents() {
+            ['h', 'e'].forEach(id => {
+                document.getElementById(`inp-${id}`).addEventListener('input', (ev) => {
+                    state[id] = parseFloat(ev.target.value);
+                    updateUI();
+                });
+            });
+            document.getElementById('btn-play').addEventListener('click', playVertical);
+            document.getElementById('btn-reset').addEventListener('click', () => { resetSim(); updateUI(); });
+        }
+
+        function playVertical() {
+            if(isPlaying) return;
+            isPlaying = true;
+            document.getElementById('btn-play').classList.add('opacity-50', 'cursor-not-allowed');
+            expBox.classList.add('hidden');
+
+            const g = 9.8; 
+            // Calculate Math instantly for table
+            const v_jatuh = Math.sqrt(2 * g * state.h); // downward speed before impact
+            const v_pantul = state.e * v_jatuh; // upward speed after impact
+            const h_akhir = state.h * (state.e * state.e); // new height
+
+            // Fill table instantly
+            document.getElementById('td-v-v1').innerHTML = `↓ ${(v_jatuh).toFixed(2)} m/s (sebelum nabrak)`;
+            
+            // Prepare animation mapping
+            // UI Max height (10m) = 240px (bottom: 240px). Floor = bottom: 0.
+            const scale = 24; // 1m = 24px
+            const floorY = 0;
+            
+            let y = state.h * scale; // current height in px
+            let vy = 0; // velocity in px/frame
+            let gravPx = 0.5; // pixel gravity
+            let e = state.e;
+            const objY = document.getElementById('objY');
+            
+            let bouncePhase = 0; // 0=falling, 1=bouncing, 2=falling again...
+
+            function animateVert() {
+                vy -= gravPx; // gravity pulls down (negative velocity)
+                y += vy;
+
+                if (y <= floorY) {
+                    y = floorY;
+                    vy = -vy * e; // bounce up, lose velocity based on e
+                    bouncePhase++;
+                    
+                    if(bouncePhase === 1) {
+                        // Tepat setelah pantulan pertama
+                        document.getElementById('td-v-h2').innerHTML = `↑ ${h_akhir.toFixed(2)} m (maksimum)`;
+                        document.getElementById('td-v-v2').innerHTML = `↑ ${(v_pantul).toFixed(2)} m/s (awal pantul)`;
+                        showExplanation('sebagian', {h_awal: state.h, h_akhir: h_akhir});
+                    }
+
+                    // Stop condition
+                    if(Math.abs(vy) < 1.5) {
+                        y = floorY;
+                        cancelAnimationFrame(animFrame);
+                        isPlaying = false;
+                        document.getElementById('btn-play').classList.remove('opacity-50', 'cursor-not-allowed');
+                        objY.style.transform = `translateY(0px)`;
+                        return;
+                    }
+                }
+
+                // translate Y goes negative to go up in CSS if bottom based, but we used bottom:8 in html, 
+                // wait, template has bottom-8. transform: translateY(-Ypx) moves it UP.
+                objY.style.transform = `translateY(-${y}px)`;
+                animFrame = requestAnimationFrame(animateVert);
+            }
+            animateVert();
+        }
+
+        function updateUI() {
+            if(isPlaying) return;
+            
+            if(currentScenario === 'sempurna' || currentScenario === 'tidak') {
+                document.getElementById('val-m1').innerText = state.m1.toFixed(1);
+                document.getElementById('val-v1').innerText = state.v1.toFixed(1);
+                document.getElementById('val-m2').innerText = state.m2.toFixed(1);
+                document.getElementById('val-v2').innerText = state.v2.toFixed(1);
+
+                // Set initial positions
+                state.pos1 = 20; state.pos2 = 70;
+                document.getElementById('obj1').style.left = '20%';
+                document.getElementById('obj2').style.left = '70%';
+
+                // Scale sizes
+                const baseW = currentScenario==='sempurna' ? 30 : 40;
+                document.getElementById('shape1').style.width = `${baseW + state.m1*10}px`;
+                document.getElementById('shape1').style.height = `${baseW + state.m1*10}px`;
+                document.getElementById('shape2').style.width = `${baseW + state.m2*10}px`;
+                document.getElementById('shape2').style.height = `${baseW + state.m2*10}px`;
+
+                // Vectors
+                drawVector(document.getElementById('vec1'), state.v1, 'blue');
+                drawVector(document.getElementById('vec2'), state.v2, 'rose');
+
+                // Table Awal
+                const p1 = state.m1 * state.v1;
+                const p2 = state.m2 * state.v2;
+                document.getElementById('td-awal-a').innerHTML = `v = ${state.v1.toFixed(2)} m/s<br><span class="text-xs text-blue-600">p = ${p1.toFixed(2)} kg.m/s</span>`;
+                document.getElementById('td-awal-b').innerHTML = `v = ${state.v2.toFixed(2)} m/s<br><span class="text-xs text-rose-600">p = ${p2.toFixed(2)} kg.m/s</span>`;
+                document.getElementById('td-awal-tot').innerText = `${(p1+p2).toFixed(2)} kg.m/s`;
+
+                // Reset Akhir
+                document.getElementById('td-akhir-a').innerHTML = `v' = -<br><span class="text-xs text-blue-600">p' = -</span>`;
+                document.getElementById('td-akhir-b').innerHTML = `v' = -<br><span class="text-xs text-rose-600">p' = -</span>`;
+                document.getElementById('td-akhir-tot').innerText = `-`;
+            } 
+            else if (currentScenario === 'sebagian') {
+                document.getElementById('val-h').innerText = state.h.toFixed(1);
+                document.getElementById('val-e').innerText = state.e.toFixed(1);
+                
+                // Set initial ball pos
+                const scale = 24;
+                const startPx = state.h * scale;
+                document.getElementById('objY').style.transform = `translateY(-${startPx}px)`;
+                
+                // Update table
+                document.getElementById('td-v-h1').innerHTML = `↓ ${state.h.toFixed(2)} m`;
+                document.getElementById('td-v-v1').innerText = '-';
+                document.getElementById('td-v-h2').innerText = '-';
+                document.getElementById('td-v-v2').innerText = '-';
+            }
+        }
+
+        function drawVector(el, v, colorClass) {
+            if(!el) return;
+            if(v === 0) { el.style.width = '0px'; return; }
+            const scale = 5;
+            el.style.width = `${Math.abs(v) * scale}px`;
+            
+            // Clean previous classes on arrowhead
+            const arrow = el.querySelector('.arrow-head');
+            arrow.className = "arrow-head absolute w-0 h-0 border-y-[4px] border-y-transparent";
+            
+            if(v > 0) {
+                el.style.transform = `translateX(50%)`; el.style.left = '50%'; el.style.right = 'auto';
+                arrow.classList.add('-right-2', 'border-l-[8px]', `border-l-${colorClass}-400`);
+            } else {
+                el.style.transform = `translateX(-50%)`; el.style.right = '50%'; el.style.left = 'auto';
+                arrow.classList.add('-left-2', 'border-r-[8px]', `border-r-${colorClass}-400`);
+            }
+        }
+
+        function resetSim() {
+            cancelAnimationFrame(animFrame);
+            isPlaying = false;
+            const btn = document.getElementById('btn-play');
+            if(btn) {
+                btn.classList.remove('opacity-50', 'cursor-not-allowed');
+                btn.innerHTML = (currentScenario === 'sebagian') ? '<i class="fas fa-play mr-1"></i> Jatuhkan' : '<i class="fas fa-play mr-1"></i> Mulai';
+            }
+            expBox.classList.add('hidden');
+        }
+
+        function showExplanation(type, data = null) {
+            expBox.classList.remove('hidden');
+            let text = "";
+            if(type === 'sempurna') {
+                text = "<strong>Lenting Sempurna (e=1):</strong> Bola saling memantul. Energi kinetik sistem dijaga sepenuhnya (tidak ada yang terbuang menjadi panas/bunyi). Perhatikan nilai <strong>Total Momentum</strong> sebelum dan sesudah tumbukan bernilai <strong>SAMA PERSIS</strong>.";
+            } else if (type === 'tidak') {
+                text = "<strong>Tidak Lenting (e=0):</strong> Benda menyatu setelah tabrakan dan bergerak dengan kecepatan yang sama (v' A = v' B). Walaupun energi kinetik hilang (berubah bentuk), <strong>Hukum Kekekalan Momentum tetap berlaku!</strong> Total momentum sebelum = sesudah.";
+            } else if (type === 'sebagian' && data) {
+                text = `<strong>Lenting Sebagian:</strong> Bola dijatuhkan dari ${data.h_awal.toFixed(1)}m, namun hanya mampu memantul kembali hingga ${data.h_akhir.toFixed(2)}m. Selisih ketinggian ini membuktikan adanya <strong>Energi Kinetik yang hilang</strong> (berubah menjadi bunyi 'dug' dan panas pada lantai) saat terjadi tumbukan.`;
+            }
+            expText.innerHTML = text;
+        }
+
+        // INIT
+        window.onload = () => {
+            setScenario('sempurna');
+        };
+    </script>
+</body>
+</html>
